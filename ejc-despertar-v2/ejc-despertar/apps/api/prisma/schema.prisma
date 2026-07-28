@@ -357,16 +357,15 @@ model RecursoBiblioteca {
 // FORMAÇÕES — ficha simplificada para quem JÁ trabalha no
 // encontro (equipeiros), diferente da Ficha do Encontrista.
 // Público-alvo: quem vai participar de uma formação.
+//   Modelo propositalmente simples (só os campos pedidos) e
+//  independente de Pessoa/Inscricao — nem todo equipeiro que se
+//  inscreve numa formação precisa ter uma conta completa no
+//  sistema. Se depois vocês quiserem linkar isso a uma Pessoa já
+//  cadastrada, dá pra adicionar um pessoaId opcional sem quebrar
+//  nada do que já existe.
+ 
 // ============================================================
 
-//
-  Modelo propositalmente simples (só os campos pedidos) e
-  independente de Pessoa/Inscricao — nem todo equipeiro que se
-  inscreve numa formação precisa ter uma conta completa no
-  sistema. Se depois vocês quiserem linkar isso a uma Pessoa já
-  cadastrada, dá pra adicionar um pessoaId opcional sem quebrar
-  nada do que já existe.
- //
 model FichaFormacao {
   id                      String   @id @default(uuid())
   nome                    String
