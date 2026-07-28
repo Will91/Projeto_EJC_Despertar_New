@@ -1,0 +1,425 @@
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// IAM — Identidade, acesso e RBAC
+// ============================================================
+
+enum RoleName {
+  ADMIN
+  COORDENACAO
+  SECRETARIA
+  TESOURARIA
+  EQUIPE
+  ENCONTRISTA
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  emailVerified Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  roles         UserRole[]
+  pessoa        Pessoa?   @relation(fields: [pessoaId], references: [id])
+  pessoaId      String?   @unique
+  refreshTokens RefreshToken[]
+  verificationTokens VerificationToken[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Role {
+  id    String     @id @default(uuid())
+  name  RoleName   @unique
+  users UserRole[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  @@id([userId, roleId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+}
+
+enum TokenPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+/**
+ * Token único para os fluxos de "confirmar e-mail" e "recuperar senha"
+ * pedidos no briefing original. Reaproveita a mesma tabela para os dois
+ * casos (diferenciados por `purpose`) em vez de duas tabelas quase
+ * idênticas — mesmo padrão de reuso já usado no AuditLog (Etapa 4).
+ */
+model VerificationToken {
+  id        String       @id @default(uuid())
+  tokenHash String       @unique
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose   TokenPurpose
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime     @default(now())
+}
+
+// ============================================================
+// PESSOAS — perfil unificado (substitui tbl_membros)
+// ============================================================
+
+model Pessoa {
+  id                      String    @id @default(uuid())
+  nome                    String
+  sobrenome               String
+  apelido                 String?
+  fotoUrl                 String?
+  sexo                    String?
+  dataNascimento          DateTime
+  rg                      String?
+  telefone                String?
+  celular                 String?
+  email                   String?
+  facebook                String?
+
+  // endereço
+  endereco                String?
+  numero                  String?
+  bairro                  String?
+  complemento             String?
+  cep                     String?
+
+  // responsável (obrigatório quando menor de idade — validado na service layer)
+  responsavelNome         String?
+  responsavelParentesco   String?
+  responsavelCelular      String?
+  responsavelDoisNome     String?
+  responsavelDoisParentesco String?
+  responsavelDoisCelular  String?
+
+  // vida de fé
+  batizado                Boolean   @default(false)
+  primeiraComunhao        Boolean   @default(false)
+  crismado                Boolean   @default(false)
+  participouOutroEjc      Boolean   @default(false)
+  nomeOutroEjc            String?
+  indicacaoPor            String?
+
+  observacoes             String?
+
+  equipeId                String?
+  equipe                  Equipe?   @relation(fields: [equipeId], references: [id])
+
+  user                    User?
+  inscricoes              Inscricao[]
+  casalComoPrimeiro       Casal[]   @relation("CasalPrimeiroComponente")
+  casalComoSegundo        Casal[]   @relation("CasalSegundoComponente")
+
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@index([nome, sobrenome])
+}
+
+model Equipe {
+  id        String    @id @default(uuid())
+  nome      String    @unique
+  descricao String?
+  pessoas   Pessoa[]
+}
+
+// ============================================================
+// ENCONTROS — substitui tbl_encontro / tbl_encontrista /
+// tbl_circulos / tbl_casal
+// ============================================================
+
+enum StatusEncontro {
+  PLANEJADO
+  INSCRICOES_ABERTAS
+  EM_ANDAMENTO
+  FINALIZADO
+  CANCELADO
+}
+
+model Encontro {
+  id                String          @id @default(uuid())
+  tema              String
+  numero            Int?
+  dataInicio        DateTime
+  dataFim           DateTime?
+  local             String
+  status            StatusEncontro  @default(PLANEJADO)
+  inicioInscricoes  DateTime
+  fimInscricoes     DateTime
+
+  inscricoes        Inscricao[]
+  circulos          Circulo[]
+  casais            Casal[]
+  transacoes        Transacao[]
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model Circulo {
+  id         String      @id @default(uuid())
+  nome       String
+  encontroId String
+  encontro   Encontro    @relation(fields: [encontroId], references: [id])
+  casalId    String?
+  casal      Casal?      @relation(fields: [casalId], references: [id])
+  inscricoes Inscricao[]
+
+  @@unique([encontroId, nome])
+}
+
+model Casal {
+  id                  String   @id @default(uuid())
+  encontroId          String
+  encontro            Encontro @relation(fields: [encontroId], references: [id])
+  primeiroComponenteId String
+  primeiroComponente  Pessoa   @relation("CasalPrimeiroComponente", fields: [primeiroComponenteId], references: [id])
+  segundoComponenteId String
+  segundoComponente   Pessoa   @relation("CasalSegundoComponente", fields: [segundoComponenteId], references: [id])
+  telefone            String?
+  celular             String?
+  endereco            String?
+  ativo               Boolean  @default(true)
+  circulos            Circulo[]
+  inscricoesPadrinhos Inscricao[] @relation("InscricaoCasalPadrinho")
+}
+
+enum StatusConfirmacao {
+  PENDENTE
+  CONFIRMADO
+  RECUSADO
+}
+
+model Inscricao {
+  id             String             @id @default(uuid())
+  pessoaId       String
+  pessoa         Pessoa             @relation(fields: [pessoaId], references: [id])
+  encontroId     String
+  encontro       Encontro           @relation(fields: [encontroId], references: [id])
+  circuloId      String?
+  circulo        Circulo?           @relation(fields: [circuloId], references: [id])
+  casalId        String?
+  casal          Casal?             @relation("InscricaoCasalPadrinho", fields: [casalId], references: [id])
+
+  status         StatusConfirmacao  @default(PENDENTE)
+  confirmadoEm   DateTime?
+  primeiroDiaEm  DateTime?
+  segundoDiaEm   DateTime?
+  cartasEm       DateTime?
+
+  qrCodeToken    String?            @unique
+  checkIns       CheckIn[]
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([pessoaId, encontroId])
+}
+
+model CheckIn {
+  id          String    @id @default(uuid())
+  inscricaoId String
+  inscricao   Inscricao @relation(fields: [inscricaoId], references: [id])
+  registradoEm DateTime @default(now())
+  registradoPorId String?
+}
+
+// ============================================================
+// INSTITUCIONAL — substitui o WordPress
+// ============================================================
+
+enum StatusPublicacao {
+  RASCUNHO
+  PUBLICADO
+}
+
+model Noticia {
+  id        String           @id @default(uuid())
+  titulo    String
+  slug      String           @unique
+  conteudo  String
+  capaUrl   String?
+  status    StatusPublicacao @default(RASCUNHO)
+  publicadoEm DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model Album {
+  id     String  @id @default(uuid())
+  titulo String
+  fotos  Foto[]
+  createdAt DateTime @default(now())
+}
+
+model Foto {
+  id      String  @id @default(uuid())
+  albumId String
+  album   Album   @relation(fields: [albumId], references: [id])
+  url     String
+  legenda String?
+}
+
+model AgendaEvento {
+  id        String   @id @default(uuid())
+  titulo    String
+  descricao String?
+  dataInicio DateTime
+  dataFim   DateTime?
+  local     String?
+}
+
+model Slide {
+  id       String  @id @default(uuid())
+  imagemUrl String
+  linkUrl  String?
+  ordem    Int     @default(0)
+  ativo    Boolean @default(true)
+}
+
+model Contato {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String
+  mensagem  String
+  lido      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ============================================================
+// COMUNICAÇÃO
+// ============================================================
+
+model Aviso {
+  id        String   @id @default(uuid())
+  titulo    String
+  conteudo  String
+  fixado    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Notificacao {
+  id        String   @id @default(uuid())
+  userId    String
+  titulo    String
+  mensagem  String
+  lida      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ============================================================
+// BIBLIOTECA
+// ============================================================
+
+enum TipoRecurso {
+  DOCUMENTO
+  FOTO
+  VIDEO
+  ORACAO
+  MUSICA
+  FORMACAO
+}
+
+model RecursoBiblioteca {
+  id        String      @id @default(uuid())
+  titulo    String
+  tipo      TipoRecurso
+  arquivoUrl String
+  descricao String?
+  createdAt DateTime    @default(now())
+}
+
+// ============================================================
+// FORMAÇÕES — ficha simplificada para quem JÁ trabalha no
+// encontro (equipeiros), diferente da Ficha do Encontrista.
+// Público-alvo: quem vai participar de uma formação.
+// ============================================================
+
+/**
+ * Modelo propositalmente simples (só os campos pedidos) e
+ * independente de Pessoa/Inscricao — nem todo equipeiro que se
+ * inscreve numa formação precisa ter uma conta completa no
+ * sistema. Se depois vocês quiserem linkar isso a uma Pessoa já
+ * cadastrada, dá pra adicionar um pessoaId opcional sem quebrar
+ * nada do que já existe.
+ */
+model FichaFormacao {
+  id                      String   @id @default(uuid())
+  nome                    String
+  email                   String
+  idade                   Int
+  ultimoEncontroTrabalhado String
+  ultimaEquipe            String
+  createdAt               DateTime @default(now())
+}
+
+// ============================================================
+// FINANCEIRO (novo — não migra o script antigo)
+// ============================================================
+
+enum TipoTransacao {
+  ENTRADA
+  SAIDA
+}
+
+model CategoriaFinanceira {
+  id          String        @id @default(uuid())
+  nome        String        @unique
+  transacoes  Transacao[]
+}
+
+model Transacao {
+  id           String              @id @default(uuid())
+  tipo         TipoTransacao
+  descricao    String
+  valorCentavos Int
+  categoriaId  String?
+  categoria    CategoriaFinanceira? @relation(fields: [categoriaId], references: [id])
+  encontroId   String?
+  encontro     Encontro?           @relation(fields: [encontroId], references: [id])
+  responsavelId String?
+  data         DateTime            @default(now())
+  createdAt    DateTime            @default(now())
+}
+
+// ============================================================
+// AUDITORIA — pedida na Etapa 1 (quem, quando, IP)
+// ============================================================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  acao       String
+  entidade   String
+  entidadeId String?
+  ip         String?
+  detalhes   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entidade, entidadeId])
+}

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EJC Despertar — Protótipo (Etapa 3)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS — EJC Despertar
+   Conceito: "Despertar" = amanhecer / despertar espiritual.
+   A identidade nasce de um arco de horizonte (aurora) que
+   reaparece como barra de progresso, divisores e loading.
+   ============================================================ */
+:root{
+  --ink-night:   #1B2036;   /* fundo noturno (hero público, login) */
+  --ink-night-2: #262C4A;
+  --dawn-gold:   #E8A33D;   /* acento principal — nascer do sol */
+  --ember:       #B8563C;   /* acento secundário — brasa/calor humano */
+  --paper:       #F6F4EE;   /* fundo claro das telas de trabalho */
+  --paper-2:     #ECE8DE;
+  --slate:       #2E3244;   /* texto principal */
+  --slate-soft:  #6B6F82;   /* texto secundário */
+  --sage:        #6B8F71;   /* confirmação / sucesso */
+  --line:        #DDD8CB;
+
+  --display: 'Fraunces', serif;
+  --body: 'Work Sans', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--body);
+  background:var(--paper);
+  color:var(--slate);
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;}
+
+/* ---------- shell / navegação de telas do protótipo ---------- */
+.proto-shell{display:flex;min-height:100vh;}
+.proto-nav{
+  width:220px;flex-shrink:0;background:var(--ink-night);color:#fff;
+  padding:24px 16px;display:flex;flex-direction:column;gap:4px;
+}
+.proto-nav .brand{
+  font-family:var(--display);font-weight:600;font-size:19px;
+  margin:0 8px 22px;letter-spacing:.2px;
+}
+.proto-nav .brand span{color:var(--dawn-gold);}
+.proto-nav button{
+  text-align:left;background:transparent;border:none;color:#C7C9DA;
+  padding:10px 12px;border-radius:8px;font-size:13.5px;font-weight:500;
+  transition:background .15s,color .15s;
+}
+.proto-nav button:hover{background:rgba(255,255,255,.06);color:#fff;}
+.proto-nav button.active{background:var(--ink-night-2);color:#fff;box-shadow:inset 3px 0 0 var(--dawn-gold);}
+.proto-nav .tag{margin-top:auto;font-size:11px;color:#6C7192;padding:0 12px;line-height:1.5;}
+.screen{display:none;flex:1;min-width:0;}
+.screen.active{display:block;}
+
+/* ---------- motivo assinatura: arco de horizonte ---------- */
+.arc-progress{position:relative;height:64px;margin:0 0 28px;}
+.arc-progress svg{width:100%;height:100%;overflow:visible;}
+.arc-track{fill:none;stroke:var(--line);stroke-width:2;}
+.arc-fill{fill:none;stroke:var(--dawn-gold);stroke-width:3;stroke-linecap:round;}
+.arc-sun{fill:var(--dawn-gold);}
+
+/* =============== TELA 1 — LOGIN =============== */
+#screen-login{background:var(--ink-night);min-height:100vh;color:#fff;position:relative;overflow:hidden;}
+.login-wrap{display:flex;min-height:100vh;}
+.login-visual{
+  flex:1.1;position:relative;display:flex;align-items:flex-end;padding:56px;
+  background:linear-gradient(180deg,#141830 0%, #1B2036 55%, #2B2444 100%);
+}
+.login-visual::before{
+  content:"";position:absolute;left:50%;top:62%;width:520px;height:520px;
+  transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle at 50% 50%, var(--dawn-gold) 0%, rgba(232,163,61,.25) 45%, transparent 72%);
+  filter:blur(2px);
+}
+.login-visual::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:38%;
+  background:linear-gradient(180deg, transparent, var(--ink-night) 85%);
+}
+.login-copy{position:relative;z-index:2;max-width:380px;}
+.login-copy .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--dawn-gold);text-transform:uppercase;}
+.login-copy h1{font-family:var(--display);font-weight:600;font-size:40px;line-height:1.12;margin:14px 0 12px;}
+.login-copy p{color:#B9BCD4;font-size:14.5px;line-height:1.6;}
+.login-form-col{flex:1;display:flex;align-items:center;justify-content:center;padding:40px;}
+.login-card{width:100%;max-width:360px;}
+.login-card h2{font-family:var(--display);font-size:24px;margin:0 0 6px;}
+.login-card p.sub{color:#9FA3C0;font-size:13.5px;margin:0 0 28px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12.5px;font-weight:600;color:#C7C9DA;margin-bottom:6px;letter-spacing:.02em;}
+.field input{
+  width:100%;padding:11px 13px;border-radius:9px;border:1px solid #3B3F5C;
+  background:#20243D;color:#fff;font-size:14px;outline:none;transition:border-color .15s;
+}
+.field input:focus{border-color:var(--dawn-gold);}
+.btn-primary{
+  width:100%;padding:12px;border-radius:9px;border:none;
+  background:var(--dawn-gold);color:#241A08;font-weight:700;font-size:14.5px;
+  margin-top:6px;transition:filter .15s;
+}
+.btn-primary:hover{filter:brightness(1.06);}
+.login-links{display:flex;justify-content:space-between;margin-top:16px;font-size:12.5px;}
+.login-links a{color:#9FA3C0;text-decoration:none;}
+.login-links a:hover{color:var(--dawn-gold);}
+
+/* =============== TELA 2 — CADASTRO ENCONTRISTA =============== */
+#screen-cadastro{padding:40px 48px;max-width:920px;}
+.page-eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;color:var(--ember);text-transform:uppercase;}
+.page-title{font-family:var(--display);font-size:30px;font-weight:600;margin:6px 0 26px;color:var(--slate);}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:32px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 20px;}
+.form-grid .full{grid-column:1/-1;}
+.form-grid label{display:block;font-size:12.5px;font-weight:600;color:var(--slate-soft);margin-bottom:6px;}
+.form-grid input,.form-grid select,.form-grid textarea{
+  width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);
+  font-size:14px;font-family:inherit;color:var(--slate);background:#FDFCFA;
+}
+.upload-photo{
+  width:96px;height:96px;border-radius:50%;border:2px dashed var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--slate-soft);
+  font-size:11px;text-align:center;margin-bottom:8px;background:var(--paper);
+}
+.form-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line);}
+.btn-ghost{padding:11px 18px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--slate);font-weight:600;font-size:13.5px;}
+.btn-dark{padding:11px 20px;border-radius:9px;border:none;background:var(--ink-night);color:#fff;font-weight:600;font-size:13.5px;}
+
+/* =============== TELA 3 — PAINEL DE INSCRIÇÕES (admin) =============== */
+#screen-inscricoes{padding:32px 40px;}
+.top-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px;}
+.stat-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+.stat-card .n{font-family:var(--display);font-size:26px;font-weight:600;color:var(--slate);}
+.stat-card .l{font-size:12px;color:var(--slate-soft);margin-top:2px;}
+.stat-card.accent{border-color:var(--dawn-gold);background:linear-gradient(180deg,#FFF8EC,#fff);}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center;}
+.toolbar input[type=search]{flex:1;padding:9px 12px;border-radius:8px;border:1px solid var(--line);font-size:13.5px;background:#fff;}
+.chip{padding:7px 13px;border-radius:20px;border:1px solid var(--line);background:#fff;font-size:12.5px;font-weight:600;color:var(--slate-soft);}
+.chip.on{background:var(--ink-night);color:#fff;border-color:var(--ink-night);}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--slate-soft);padding:12px 16px;border-bottom:1px solid var(--line);background:var(--paper);}
+td{padding:12px 16px;font-size:13.5px;border-bottom:1px solid var(--line);}
+tr:last-child td{border-bottom:none;}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--ember);color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;vertical-align:middle;}
+.badge{padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:700;}
+.badge.confirmado{background:#E9F2EA;color:var(--sage);}
+.badge.pendente{background:#FDF1E3;color:var(--dawn-gold);filter:brightness(.85);}
+.badge.circulo{background:#F0EEF9;color:#5B4E9C;}
+.row-actions{color:var(--slate-soft);font-size:13px;}
+
+/* =============== TELA 4 — CMS INSTITUCIONAL =============== */
+#screen-cms{padding:32px 40px;}
+.cms-cols{display:grid;grid-template-columns:280px 1fr;gap:24px;}
+.cms-side .card{padding:8px;}
+.cms-side button.mod{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:11px 12px;border:none;background:transparent;border-radius:9px;font-size:13.5px;color:var(--slate);font-weight:600;
+}
+.cms-side button.mod.on{background:var(--paper-2);}
+.cms-side button.mod .dot{width:7px;height:7px;border-radius:50%;background:var(--dawn-gold);}
+.editor-toolbar{display:flex;gap:6px;padding:10px;border:1px solid var(--line);border-bottom:none;border-radius:10px 10px 0 0;background:var(--paper);}
+.editor-toolbar span{width:28px;height:28px;border-radius:6px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--slate-soft);}
+.editor-body{border:1px solid var(--line);border-radius:0 0 10px 10px;padding:18px;min-height:160px;background:#fff;color:var(--slate-soft);font-size:13.5px;}
+.list-item{display:flex;justify-content:space-between;align-items:center;padding:13px 4px;border-bottom:1px solid var(--line);font-size:13.5px;}
+.list-item:last-child{border-bottom:none;}
+.thumb{width:38px;height:38px;border-radius:8px;background:linear-gradient(135deg,var(--dawn-gold),var(--ember));margin-right:12px;flex-shrink:0;}
+
+/* =============== TELA 5 — FINANCEIRO =============== */
+#screen-financeiro{padding:32px 40px;}
+.fin-summary{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:24px;}
+.balance-card{background:var(--ink-night);color:#fff;border-radius:14px;padding:26px;position:relative;overflow:hidden;}
+.balance-card::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(232,163,61,.35),transparent 70%);}
+.balance-card .l{font-size:12px;color:#A9ACC6;position:relative;}
+.balance-card .n{font-family:var(--display);font-size:34px;font-weight:600;margin-top:6px;position:relative;}
+.mini-stats{display:flex;flex-direction:column;gap:12px;}
+.mini-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}
+.mini-stat .l{font-size:12.5px;color:var(--slate-soft);}
+.mini-stat .n{font-family:var(--mono);font-weight:600;font-size:14.5px;}
+.in{color:var(--sage);}
+.out{color:var(--ember);}
+
+.section-note{font-size:12px;color:var(--slate-soft);margin-top:18px;border-top:1px dashed var(--line);padding-top:14px;}
+</style>
+</head>
+<body>
+
+<div class="proto-shell">
+  <nav class="proto-nav">
+    <div class="brand">Despertar<span>.</span></div>
+    <button class="active" data-target="screen-login">01 · Login / Portal</button>
+    <button data-target="screen-cadastro">02 · Cadastro do Encontrista</button>
+    <button data-target="screen-inscricoes">03 · Painel de Inscrições</button>
+    <button data-target="screen-cms">04 · CMS Institucional</button>
+    <button data-target="screen-financeiro">05 · Financeiro</button>
+    <div class="tag">Protótipo de baixa/média fidelidade — Etapa 3. Navegação apenas entre telas, sem lógica real.</div>
+  </nav>
+
+  <!-- ================= TELA 1: LOGIN ================= -->
+  <div class="screen active" id="screen-login">
+    <div class="login-wrap">
+      <div class="login-visual">
+        <div class="login-copy">
+          <div class="eyebrow">Encontro de Jovens com Cristo</div>
+          <h1>Cada encontro começa antes do amanhecer.</h1>
+          <p>Portal único de inscrições, círculos, comunicação e gestão do Despertar — substituindo os três sistemas antigos por um só lugar.</p>
+        </div>
+      </div>
+      <div class="login-form-col">
+        <div class="login-card">
+          <h2>Entrar</h2>
+          <p class="sub">Acesse com o e-mail cadastrado na sua equipe ou como encontrista.</p>
+          <div class="field"><label>E-mail</label><input type="text" placeholder="voce@email.com"></div>
+          <div class="field"><label>Senha</label><input type="password" placeholder="••••••••"></div>
+          <button class="btn-primary">Entrar</button>
+          <div class="login-links">
+            <a href="#">Esqueci minha senha</a>
+            <a href="#">Criar conta</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TELA 2: CADASTRO ENCONTRISTA ================= -->
+  <div class="screen" id="screen-cadastro">
+    <div class="page-eyebrow">Encontros · Inscrição</div>
+    <h1 class="page-title">Ficha do Encontrista</h1>
+
+    <!-- motivo assinatura: arco de progresso -->
+    <div class="arc-progress">
+      <svg viewBox="0 0 600 64" preserveAspectRatio="none">
+        <path class="arc-track" d="M10,60 Q300,-30 590,60"/>
+        <path class="arc-fill" d="M10,60 Q300,-30 590,60" stroke-dasharray="900" stroke-dashoffset="560"/>
+        <circle class="arc-sun" cx="230" cy="8" r="6"/>
+      </svg>
+    </div>
+
+    <div class="card">
+      <div class="form-grid">
+        <div class="full" style="display:flex;gap:16px;align-items:center;">
+          <div class="upload-photo">Foto<br>3x4</div>
+          <div style="font-size:12.5px;color:var(--slate-soft);">Dados pessoais e de contato — mesmos campos do cadastro atual, mais campos de equipe e histórico.</div>
+        </div>
+        <div><label>Nome completo</label><input placeholder="Maria Clara Souza"></div>
+        <div><label>Apelido</label><input placeholder="Mari"></div>
+        <div><label>Data de nascimento</label><input placeholder="dd/mm/aaaa"></div>
+        <div><label>Telefone</label><input placeholder="(11) 90000-0000"></div>
+        <div class="full"><label>E-mail</label><input placeholder="maria@email.com"></div>
+        <div class="full"><label>Endereço</label><input placeholder="Rua, número, bairro, cidade"></div>
+        <div><label>Equipe</label>
+          <select><option>Selecionar equipe...</option><option>Cozinha</option><option>Liturgia</option><option>Círculo 3</option></select>
+        </div>
+        <div><label>Função</label>
+          <select><option>Encontrista</option><option>Equipe de apoio</option><option>Coordenação</option></select>
+        </div>
+        <div class="full"><label>Observações</label><textarea rows="3" placeholder="Restrições alimentares, saúde, observações da secretaria..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-ghost">Salvar rascunho</button>
+        <button class="btn-dark">Confirmar inscrição →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TELA 3: PAINEL DE INSCRIÇÕES ================= -->
+  <div class="screen" id="screen-inscricoes">
+    <div class="top-row">
+      <div>
+        <div class="page-eyebrow">Encontro 47 · Despertar</div>
+        <h1 class="page-title" style="margin-bottom:0;">Painel de Inscrições</h1>
+      </div>
+      <button class="btn-dark">+ Novo encontrista</button>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-card accent"><div class="n">86</div><div class="l">Inscritos totais</div></div>
+      <div class="stat-card"><div class="n">61</div><div class="l">Confirmados · 1º dia</div></div>
+      <div class="stat-card"><div class="n">12</div><div class="l">Pendentes de pagamento</div></div>
+      <div class="stat-card"><div class="n">7</div><div class="l">Círculos formados</div></div>
+    </div>
+
+    <div class="toolbar">
+      <input type="search" placeholder="Buscar por nome, RG ou círculo...">
+      <span class="chip on">Todos</span>
+      <span class="chip">Confirmados</span>
+      <span class="chip">Pendentes</span>
+      <span class="chip">Check-in</span>
+    </div>
+
+    <table>
+      <thead><tr><th>Encontrista</th><th>Círculo</th><th>Equipe</th><th>Status</th><th>Inscrição</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><span class="avatar">MC</span>Maria Clara Souza</td><td><span class="badge circulo">Círculo 3</span></td><td>—</td><td><span class="badge confirmado">Confirmado</span></td><td style="font-family:var(--mono);font-size:12.5px;">12/07/2026</td><td class="row-actions">···</td></tr>
+        <tr><td><span class="avatar">JP</span>João Pedro Lima</td><td><span class="badge circulo">Círculo 1</span></td><td>Cozinha</td><td><span class="badge pendente">Pendente</span></td><td style="font-family:var(--mono);font-size:12.5px;">14/07/2026</td><td class="row-actions">···</td></tr>
+        <tr><td><span class="avatar">AF</span>Ana Flávia Ramos</td><td><span class="badge circulo">Círculo 3</span></td><td>—</td><td><span class="badge confirmado">Confirmado</span></td><td style="font-family:var(--mono);font-size:12.5px;">10/07/2026</td><td class="row-actions">···</td></tr>
+        <tr><td><span class="avatar">RT</span>Rafael Tavares</td><td>—</td><td>Liturgia</td><td><span class="badge pendente">Pendente</span></td><td style="font-family:var(--mono);font-size:12.5px;">16/07/2026</td><td class="row-actions">···</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================= TELA 4: CMS INSTITUCIONAL ================= -->
+  <div class="screen" id="screen-cms">
+    <div class="page-eyebrow">Site institucional</div>
+    <h1 class="page-title">Conteúdo público</h1>
+    <div class="cms-cols">
+      <div class="cms-side">
+        <div class="card">
+          <button class="mod on"><span class="dot"></span> Notícias</button>
+          <button class="mod"><span class="dot" style="background:var(--line)"></span> Galeria de fotos</button>
+          <button class="mod"><span class="dot" style="background:var(--line)"></span> Agenda</button>
+          <button class="mod"><span class="dot" style="background:var(--line)"></span> Slides da home</button>
+          <button class="mod"><span class="dot" style="background:var(--line)"></span> Contatos</button>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <label style="font-size:12.5px;font-weight:600;color:var(--slate-soft);">Título da notícia</label>
+          <input style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);margin:6px 0 16px;font-size:14px;" placeholder="Inscrições abertas para o Despertar 48">
+          <div class="editor-toolbar">
+            <span>B</span><span>I</span><span>🔗</span><span>🖼</span><span>≡</span>
+          </div>
+          <div class="editor-body">As inscrições para o próximo encontro já estão abertas! Preencha a ficha completa pelo portal e garanta sua vaga...</div>
+          <div class="form-actions">
+            <button class="btn-ghost">Salvar rascunho</button>
+            <button class="btn-dark">Publicar</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="list-item"><div style="display:flex;align-items:center;"><div class="thumb"></div>Inscrições abertas para o Despertar 48</div><span style="color:var(--slate-soft);font-size:12px;">publicado · 2 dias</span></div>
+          <div class="list-item"><div style="display:flex;align-items:center;"><div class="thumb"></div>Retiro de círculos — fotos do último encontro</div><span style="color:var(--slate-soft);font-size:12px;">publicado · 1 semana</span></div>
+          <div class="list-item"><div style="display:flex;align-items:center;"><div class="thumb"></div>Agenda de formações do 2º semestre</div><span style="color:var(--slate-soft);font-size:12px;">rascunho</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TELA 5: FINANCEIRO ================= -->
+  <div class="screen" id="screen-financeiro">
+    <div class="page-eyebrow">Módulo novo</div>
+    <h1 class="page-title">Financeiro</h1>
+    <div class="fin-summary">
+      <div class="balance-card">
+        <div class="l">Saldo atual — Encontro 47</div>
+        <div class="n">R$ 8.240,00</div>
+      </div>
+      <div class="mini-stats">
+        <div class="mini-stat"><span class="l">Entradas do mês</span><span class="n in">+ R$ 5.100,00</span></div>
+        <div class="mini-stat"><span class="l">Saídas do mês</span><span class="n out">− R$ 2.860,00</span></div>
+      </div>
+    </div>
+    <div class="card" style="padding:0;">
+      <table style="border:none;">
+        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Responsável</th><th style="text-align:right;">Valor</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:var(--mono);font-size:12.5px;">15/07/2026</td><td>Doação — família Ramos</td><td><span class="badge circulo">Doação</span></td><td>Tesouraria</td><td style="text-align:right;color:var(--sage);font-family:var(--mono);">+ R$ 500,00</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:12.5px;">14/07/2026</td><td>Compra de mantimentos</td><td><span class="badge pendente">Cozinha</span></td><td>Rafael T.</td><td style="text-align:right;color:var(--ember);font-family:var(--mono);">− R$ 860,00</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:12.5px;">12/07/2026</td><td>Taxa de inscrição — 6 encontristas</td><td><span class="badge confirmado">Inscrição</span></td><td>Secretaria</td><td style="text-align:right;color:var(--sage);font-family:var(--mono);">+ R$ 1.200,00</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-note">Toda movimentação registra usuário, data/hora e IP — trilha de auditoria pedida na Etapa 1 e 2.</div>
+  </div>
+
+</div>
+
+<script>
+document.querySelectorAll('.proto-nav button[data-target]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.proto-nav button[data-target]').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.target).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
